@@ -56,19 +56,23 @@ exports.testCallbacksGetCalled = function() {
         return response.html("<h1>This is the Response Text</h1>");
     };
 
-    var successCalled, completeCalled, errorCalled;
+    var beforeSendCalled, successCalled, completeCalled, errorCalled;
     request({
         "url": baseUri,
-        "success": function(data, status, contentType, client) {
+        "beforeSend": function(exchange) {
+            beforeSendCalled = true;
+        },
+        "success": function(data, status, contentType, exchange) {
             successCalled = true;
         },
-        "complete": function(data, status, contentType, client) {
+        "complete": function(data, status, contentType, exchange) {
             completeCalled = true;
         },
-        "error": function(message, status, client) {
+        "error": function(message, status, exchange) {
             errorCalled = true;
         }
     });
+    assert.isTrue(beforeSendCalled);
     assert.isTrue(successCalled);
     assert.isTrue(completeCalled);
     assert.isUndefined(errorCalled);
