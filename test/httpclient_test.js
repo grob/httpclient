@@ -7,6 +7,7 @@ var strings = require("ringo/utils/strings");
 var {MemoryStream, TextStream} = require("io");
 var fs = require("fs");
 var base64 = require("ringo/base64");
+var {ByteArray} = require("binary");
 
 var server;
 var host = "127.0.0.1";
@@ -489,7 +490,7 @@ exports.testCallbacks = function() {
     assert.isUndefined(errorCalled);
 };
 
-exports.postMultipart = function() {
+exports.testPostMultipart = function() {
 
     var textFile = module.resolve("text_test.txt");
     var imageFile = module.resolve("upload_test.png");
@@ -508,6 +509,13 @@ exports.postMultipart = function() {
     var textStream = fs.open(textFile, {"read": true, "charset": "utf-8"});
     var textFileStream = fs.open(textFile, {"read": true, "charset": "utf-8"});
     var binaryStream = fs.open(imageFile, {"read": true, "binary": true});
+
+    var inputStream = fs.open(imageFile, {"read": true, "binary": true});
+    // small <1k file, just read it all in
+    var size = fs.size(imageFile);
+    var imageByteArray = new ByteArray(size);
+    inputStream.readInto(imageByteArray, 0, size);
+
     var exchange = request({
         url: baseUri,
         method: "POST",
@@ -526,6 +534,8 @@ exports.postMultipart = function() {
     assert.strictEqual(received.textfile.filename, fs.base(textFile));
     assert.strictEqual(received.textfile.value.decodeToString(), fs.read(textFile));
     assert.isNotUndefined(received.image);
+    assert.strictEqual(received.image.value.length, imageByteArray.length);
+    assert.deepEqual(received.image.value.toArray(), imageByteArray.toArray());
 };
 
 // start the test runner if we're called directly from command line
